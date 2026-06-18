@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة كوسميتيك ريماس</title>
+    
+    <style>
+        /* =========================================
+           التنسيقات الأساسية والألوان
+           ========================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        header {
+            background-color: #1a1a1a; 
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-bottom: 3px solid #28a745;
+        }
+
+        header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* =========================================
+           لوحة الإحصائيات (البطاقات العلوية)
+           ========================================= */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+            border-bottom: 4px solid #333;
+            transition: transform 0.2s;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+        .card h3 { margin: 0; color: #555; font-size: 15px; font-weight: bold; }
+        .card .amount { font-size: 24px; font-weight: bold; margin-top: 10px; }
+
+        .card.sales { border-color: #007bff; } .card.sales .amount { color: #007bff; }
+        .card.expense { border-color: #dc3545; } .card.expense .amount { color: #dc3545; }
+        .card.profit { border-color: #28a745; } .card.profit .amount { color: #28a745; }
+        .card.debt-in { border-color: #fd7e14; } .card.debt-in .amount { color: #fd7e14; }
+
+        /* =========================================
+           شريط القوائم
+           ========================================= */
+        .horizontal-nav {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .horizontal-nav button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .horizontal-nav button:hover, .horizontal-nav button.active {
+            background-color: #28a745;
+            box-shadow: 0 4px 8px rgba(40,167,69,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* =========================================
+           تصميم النوافذ والجداول
+           ========================================= */
+        .tab-section {
+            display: none;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            animation: fadeIn 0.4s;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 12px; margin-top: 0;}
+        
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 150px;
+            font-family: inherit;
+            font-size: 15px;
+        }
+
+        input:focus, select:focus { outline: none; border-color: #28a745; }
+
+        .search-bar { width: 100%; padding: 14px; border: 2px solid #333; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; font-size: 16px;}
+        .search-bar:focus { border-color: #28a745; }
+
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            margin-top: 10px; 
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px #e9ecef;
+        }
+        
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid #e9ecef; }
+        th { background-color: #1a1a1a; color: #ffffff; font-weight: normal; font-size: 16px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f1f8ff; }
+
+        .btn { background-color: #333; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .btn:hover { background-color: #555; }
+        .btn-delete { background-color: #dc3545; padding: 8px 12px; font-size: 14px;} 
+        .btn-delete:hover { background-color: #c82333; }
+        .btn-success { background-color: #28a745; } 
+        .btn-success:hover { background-color: #218838; }
+
+        @media print {
+            .horizontal-nav, .input-group, .btn, .search-bar { display: none !important; }
+            .tab-section { display: block !important; box-shadow: none; border: none; }
+            body { background-color: white; }
+            table { box-shadow: none; border: 1px solid #ddd; }
+            th { background-color: #f8f9fa; color: black; }
+        }
+    </style>
+</head>
+<body onload="initApp()">
+
+    <header>
+        <h1>كوسميتيك ريماس</h1>
+        <button class="btn" style="background: white; color: black;" onclick="window.print()">🖨️ طباعة التقرير</button>
+    </header>
+
+    <div class="container">
+        
+        <!-- لوحة الإحصائيات -->
+        <div class="dashboard-cards">
+            <div class="card sales">
+                <h3>المداخيل (المبيعات)</h3>
+                <div class="amount" id="statSales">0 دج</div>
+            </div>
+            <div class="card expense">
+                <h3>المصاريف (الخسائر)</h3>
+                <div class="amount" id="statExpenses">0 دج</div>
+            </div>
+            <div class="card profit">
+                <h3>صافي الربح الحقيقي</h3>
+                <div class="amount" id="statProfit">0 دج</div>
+            </div>
+            <div class="card debt-in">
+                <h3>ديون الزبائن (كريدي)</h3>
+                <div class="amount" id="statCustomerDebts">0 دج</div>
+            </div>
+        </div>
+
+        <!-- القوائم -->
+        <nav class="horizontal-nav">
+            <button onclick="openTab('pos', this)" class="active">🛒 نقطة البيع</button>
+            <button onclick="openTab('products', this)">📦 السلع والمخزون</button>
+            <button onclick="openTab('low-stock', this)">📉 نواقص المحل</button> <!-- الخانة الجديدة -->
+            <button onclick="openTab('expenses', this)">💸 المصاريف</button>
+            <button onclick="openTab('debts-customers', this)">📒 ديون الزبائن</button>
+        </nav>
+
+        <!-- ================= 1. نقطة البيع ================= -->
+        <section id="pos" class="tab-section" style="display: block;">
+            <h2>🛒 نقطة البيع وتسجيل المداخيل</h2>
+            <div class="input-group">
+                <select id="posProductSelect">
+                    <option value="">-- اختر السلعة المباعة --</option>
+                </select>
+                <input type="number" id="posQty" placeholder="الكمية المباعة" min="1" value="1">
+                <button class="btn btn-success" onclick="sellProduct()">💰 إتمام البيع</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr><th>التاريخ</th><th>السلعة</th><th>الكمية</th><th>المبلغ</th><th>إجراء</th></tr>
+                </thead>
+                <tbody id="salesTableBody"></tbody>
+            </table>
+        </section>
+
+        <!-- ================= 2. السلع ================= -->
+        <section id="products" class="tab-section">
+            <h2>📦 إدارة السلع والمخزون</h2>
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 ابحث عن سلعة بالاسم أو الباركود..." onkeyup="searchProduct()">
+
+            <div class="input-group">
+                <input type="text" id="pCode" placeholder="الباركود">
+                <input type="text" id="pName" placeholder="اسم السلعة">
+                <input type="number" id="pQty" placeholder="الكمية المتوفرة">
+                <input type="number" id="pPrice" placeholder="سعر البيع (دج)">
+                <button class="btn btn-success" onclick="addProduct()">+ إدخال للمخزون</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr><th>الباركود</th><th>اسم السلعة</th><th>المتوفر</th><th>السعر</th><th>إجراء</th></tr>
+                </thead>
+                <tbody id="productsTableBody"></tbody>
+            </table>
+        </section>
+
+        <!-- ================= 3. النواقص (الإضافة الجديدة) ================= -->
+        <section id="low-stock" class="tab-section">
+            <h2>📉 نواقص المحل (المشتريات المطلوبة)</h2>
+            <p>هذه القائمة تظهر آلياً السلع التي كميتها 3 أو أقل لتتذكر شراءها.</p>
+            <table>
+                <thead>
+                    <tr><th>الباركود</th><th>اسم السلعة</th><th>الكمية المتبقية</th></tr>
+                </thead>
+                <tbody id="lowStockTableBody"></tbody>
+            </table>
+        </section>
+
+        <!-- ================= 4. المصاريف ================= -->
+        <section id="expenses" class="tab-section">
+            <h2>💸 المصاريف (الخسائر اليومية)</h2>
+            <div class="input-group">
+                <input type="text" id="eName" placeholder="وصف المصروف (نقل، أكياس...)">
+                <input type="number" id="eAmount" placeholder="المبلغ (دج)">
+                <button class="btn btn-delete" onclick="addExpense()">+ تسجيل المصروف</button>
+            </div>
+            <table>
+                <thead><tr><th>البيان</th><th>المبلغ</th><th>إجراء</th></tr></thead>
+                <tbody id="expensesTableBody"></tbody>
+            </table>
+        </section>
+
+        <!-- ================= 5. الديون ================= -->
+        <section id="debts-customers" class="tab-section">
+            <h2>📒 ديون الزبائن (كريدي)</h2>
+            <div class="input-group">
+                <input type="text" id="dcName" placeholder="اسم الزبون">
+                <input type="number" id="dcAmount" placeholder="المبلغ (دج)">
+                <input type="text" id="dcPhone" placeholder="رقم الهاتف">
+                <button class="btn btn-success" onclick="addCustomerDebt()">+ إضافة دين</button>
+            </div>
+            <table>
+                <thead><tr><th>اسم الزبون</th><th>المبلغ المطلوب</th><th>رقم الهاتف</th><th>إجراء</th></tr></thead>
+                <tbody id="customerDebtsBody"></tbody>
+            </table>
+        </section>
+
+    </div>
+
+    <script>
+        let products = [];
+        let sales = [];
+        let expenses = [];
+        let customerDebts = [];
+
+        function openTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-section').forEach(tab => tab.style.display = 'none');
+            document.querySelectorAll('.horizontal-nav button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            if(btnElement) btnElement.classList.add('active');
+        }
+
+        function initApp() {
+            if(localStorage.getItem('rimasProducts')) products = JSON.parse(localStorage.getItem('rimasProducts'));
+            if(localStorage.getItem('rimasSales')) sales = JSON.parse(localStorage.getItem('rimasSales'));
+            if(localStorage.getItem('rimasExpenses')) expenses = JSON.parse(localStorage.getItem('rimasExpenses'));
+            if(localStorage.getItem('rimasCustomerDebts')) customerDebts = JSON.parse(localStorage.getItem('rimasCustomerDebts'));
+            refreshAllViews();
+        }
+
+        function refreshAllViews() {
+            renderProducts();
+            renderSales();
+            renderExpenses();
+            renderCustomerDebts();
+            renderLowStock(); // تحديث قائمة النواقص
+            updateDashboard();
+            updatePosDropdown();
+        }
+
+        function updateDashboard() {
+            let totalSales = sales.reduce((sum, sale) => sum + parseInt(sale.totalPrice), 0);
+            let totalExpenses = expenses.reduce((sum, exp) => sum + parseInt(exp.amount), 0);
+            let totalProfit = totalSales - totalExpenses;
+            let totalCDebts = customerDebts.reduce((sum, debt) => sum + parseInt(debt.amount), 0);
+
+            document.getElementById('statSales').innerText = totalSales + " دج";
+            document.getElementById('statExpenses').innerText = totalExpenses + " دج";
+            document.getElementById('statProfit').innerText = totalProfit + " دج";
+            document.getElementById('statCustomerDebts').innerText = totalCDebts + " دج";
+        }
+
+        // --- السلع ---
+        function addProduct() {
+            let code = document.getElementById('pCode').value;
+            let name = document.getElementById('pName').value;
+            let qty = document.getElementById('pQty').value;
+            let price = document.getElementById('pPrice').value;
+
+            if(!name || !price || !qty) return alert("أكمل بيانات السلعة!");
+
+            products.push({ code, name, qty: parseInt(qty), price: parseInt(price) });
+            localStorage.setItem('rimasProducts', JSON.stringify(products));
+            
+            document.getElementById('pCode').value = ''; document.getElementById('pName').value = '';
+            document.getElementById('pQty').value = ''; document.getElementById('pPrice').value = '';
+            refreshAllViews();
+        }
+
+        function renderProducts() {
+            let tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+            products.forEach((p, index) => {
+                let statusColor = p.qty <= 3 ? 'color: #dc3545; font-weight: bold;' : '';
+                tbody.innerHTML += `<tr>
+                    <td>${p.code}</td><td>${p.name}</td>
+                    <td style="${statusColor}">${p.qty}</td><td>${p.price} دج</td>
+                    <td><button class="btn btn-delete" onclick="deleteItem('products', ${index})">حذف</button></td>
+                </tr>`;
+            });
+        }
+
+        // --- النواقص ---
+        function renderLowStock() {
+            let tbody = document.getElementById('lowStockTableBody');
+            tbody.innerHTML = '';
+            let hasLow = false;
+            products.forEach(p => {
+                if(p.qty <= 3) {
+                    hasLow = true;
+                    tbody.innerHTML += `<tr><td>${p.code}</td><td>${p.name}</td><td style="color:#dc3545; font-weight:bold;">${p.qty}</td></tr>`;
+                }
+            });
+            if(!hasLow) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#28a745; font-weight:bold;">جميع السلع متوفرة بكميات جيدة الحمد لله</td></tr>`;
+            }
+        }
+
+        function updatePosDropdown() {
+            let select = document.getElementById('posProductSelect');
+            select.innerHTML = '<option value="">-- اختر السلعة المباعة --</option>';
+            products.forEach((p, index) => {
+                if(p.qty > 0) select.innerHTML += `<option value="${index}">${p.name} - ${p.price} دج (متبقي: ${p.qty})</option>`;
+            });
+        }
+
+        // --- نقطة البيع ---
+        function sellProduct() {
+            let pIndex = document.getElementById('posProductSelect').value;
+            let qtyToSell = parseInt(document.getElementById('posQty').value);
+
+            if(pIndex === "" || isNaN(qtyToSell) || qtyToSell <= 0) return alert("اختر سلعة وحدد الكمية!");
+            
+            let product = products[pIndex];
+            if(qtyToSell > product.qty) return alert("الكمية المطلوبة غير متوفرة في المخزن!");
+
+            product.qty -= qtyToSell;
+            localStorage.setItem('rimasProducts', JSON.stringify(products));
+
+            let date = new Date().toLocaleString('ar-DZ');
+            let totalPrice = product.price * qtyToSell;
+            sales.push({ date, name: product.name, qty: qtyToSell, totalPrice });
+            localStorage.setItem('rimasSales', JSON.stringify(sales));
+
+            document.getElementById('posQty').value = 1;
+            refreshAllViews();
+        }
+
+        function renderSales() {
+            let tbody = document.getElementById('salesTableBody');
+            tbody.innerHTML = '';
+            sales.forEach((s, index) => {
+                tbody.innerHTML += `<tr>
+                    <td>${s.date}</td><td>${s.name}</td><td>${s.qty}</td><td style="color:#28a745; font-weight:bold;">${s.totalPrice} دج</td>
+                    <td><button class="btn btn-delete" onclick="deleteItem('sales', ${index})">إلغاء البيع</button></td>
+                </tr>`;
+            });
+        }
+
+        // --- المصاريف والديون ---
+        function addExpense() {
+            let name = document.getElementById('eName').value;
+            let amount = document.getElementById('eAmount').value;
+            if(!name || !amount) return;
+            expenses.push({ name, amount: parseInt(amount) });
+            localStorage.setItem('rimasExpenses', JSON.stringify(expenses));
+            document.getElementById('eName').value = ''; document.getElementById('eAmount').value = '';
+            refreshAllViews();
+        }
+
+        function renderExpenses() {
+            let tbody = document.getElementById('expensesTableBody');
+            tbody.innerHTML = '';
+            expenses.forEach((e, index) => {
+                tbody.innerHTML += `<tr><td>${e.name}</td><td style="color:#dc3545; font-weight:bold;">${e.amount} دج</td>
+                <td><button class="btn btn-delete" onclick="deleteItem('expenses', ${index})">حذف</button></td></tr>`;
+            });
+        }
+
+        function addCustomerDebt() {
+            let name = document.getElementById('dcName').value;
+            let amount = document.getElementById('dcAmount').value;
+            let phone = document.getElementById('dcPhone').value;
+            if(!name || !amount) return;
+            customerDebts.push({ name, amount: parseInt(amount), phone });
+            localStorage.setItem('rimasCustomerDebts', JSON.stringify(customerDebts));
+            document.getElementById('dcName').value = ''; document.getElementById('dcAmount').value = ''; document.getElementById('dcPhone').value = '';
+            refreshAllViews();
+        }
+
+        function renderCustomerDebts() {
+            let tbody = document.getElementById('customerDebtsBody');
+            tbody.innerHTML = '';
+            customerDebts.forEach((d, index) => {
+                tbody.innerHTML += `<tr><td>${d.name}</td><td style="color:#fd7e14; font-weight:bold;">${d.amount} دج</td><td>${d.phone}</td>
+                <td><button class="btn btn-success" onclick="deleteItem('customerDebts', ${index})">تم التسديد ✔️</button></td></tr>`;
+            });
+        }
+
+        // --- البحث والحذف المطور ---
+        function searchProduct() {
+            let filter = document.getElementById('searchInput').value.toUpperCase();
+            let trs = document.getElementById('productsTableBody').getElementsByTagName('tr');
+            for (let i = 0; i < trs.length; i++) {
+                let tdName = trs[i].getElementsByTagName('td')[1];
+                let tdCode = trs[i].getElementsByTagName('td')[0];
+                if (tdName || tdCode) {
+                    let textValue = tdName.textContent + " " + tdCode.textContent;
+                    trs[i].style.display = textValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        function deleteItem(type, index) {
+            if(confirm("هل أنت متأكد من هذا الإجراء؟")) {
+                if(type === 'products') products.splice(index, 1);
+                
+                if(type === 'sales') {
+                    // إصلاح المشكلة: إرجاع السلعة للمخزن عند إلغاء البيع
+                    let sale = sales[index];
+                    let product = products.find(p => p.name === sale.name);
+                    if(product) product.qty += sale.qty; // إعادة الكمية
+                    sales.splice(index, 1);
+                    localStorage.setItem('rimasProducts', JSON.stringify(products));
+                }
+                
+                if(type === 'expenses') expenses.splice(index, 1);
+                if(type === 'customerDebts') customerDebts.splice(index, 1);
+                
+                localStorage.setItem('rimasProducts', JSON.stringify(products));
+                localStorage.setItem('rimasSales', JSON.stringify(sales));
+                localStorage.setItem('rimasExpenses', JSON.stringify(expenses));
+                localStorage.setItem('rimasCustomerDebts', JSON.stringify(customerDebts));
+                
+                refreshAllViews();
+            }
+        }
+    </script>
+</body>
+</html>
